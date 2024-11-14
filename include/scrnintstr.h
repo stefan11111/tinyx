@@ -56,6 +56,14 @@ SOFTWARE.
 #include <X11/Xproto.h>
 #include "dix.h"
 
+typedef int (*ConfigNotifyProcPtr) (WindowPtr /*pWin */ ,
+                                    int /*x */ ,
+                                    int /*y */ ,
+                                    int /*w */ ,
+                                    int /*h */ ,
+                                    int /*bw */ ,
+                                    WindowPtr /*pSib */ );
+
 typedef struct _PixmapFormat {
     unsigned char	depth;
     unsigned char	bitsPerPixel;
@@ -396,6 +404,7 @@ typedef struct _Screen {
     pointer		devPrivate;
     short       	numVisuals;
     VisualPtr		visuals;
+    WindowPtr           root;
     int			WindowPrivateLen;
     unsigned		*WindowPrivateSizes;
     unsigned		totalWindowSize;
@@ -497,6 +506,7 @@ typedef struct _Screen {
 
     MarkWindowProcPtr		MarkWindow;
     MarkOverlappedWindowsProcPtr MarkOverlappedWindows;
+    ConfigNotifyProcPtr         ConfigNotify;
     MoveWindowProcPtr		MoveWindow;
     ResizeWindowProcPtr		ResizeWindow;
     GetLayerWindowProcPtr	GetLayerWindow;

@@ -84,6 +84,10 @@ typedef struct _Pixmap {
     DrawableRec		drawable;
     int			refcnt;
     int			devKind;
+#ifdef COMPOSITE
+    short               screen_x;
+    short               screen_y;
+#endif
     DevUnion		devPrivate;
     DevUnion		*devPrivates; /* real devPrivates like gcs & windows */
 } PixmapRec;

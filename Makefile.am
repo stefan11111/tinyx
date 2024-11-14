@@ -6,6 +6,10 @@ if DBE
 DBE_DIR=dbe
 endif
 
+if COMPOSITE
+COMPOSITE_DIR=composite
+endif
+
 SUBDIRS = \
 	include \
 	dix  \
@@ -19,6 +23,7 @@ SUBDIRS = \
 	$(DBE_DIR) \
 	xfixes \
 	damageext \
+	$(COMPOSITE_DIR) \
 	kdrive
 
 DIST_SUBDIRS = \
@@ -34,4 +39,5 @@ DIST_SUBDIRS = \
 	dbe \
 	xfixes \
 	damageext \
+	composite \
 	kdrive

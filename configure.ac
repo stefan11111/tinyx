@@ -250,6 +250,7 @@ AC_ARG_WITH(default-font-path, AS_HELP_STRING([--with-default-font-path=PATH], [
 				[ FONTPATH="${DEFAULT_FONT_PATH}" ])
 
 dnl Extensions.
+AC_ARG_ENABLE(composite,      AS_HELP_STRING([--disable-composite], [Build Composite extension (default: enabled)]), [COMPOSITE=$enableval], [COMPOSITE=yes])
 AC_ARG_ENABLE(xres,           AS_HELP_STRING([--disable-xres], [Build XRes extension (default: enabled)]), [RES=$enableval], [RES=yes])
 AC_ARG_ENABLE(screensaver,    AS_HELP_STRING([--disable-screensaver], [Build ScreenSaver extension (default: enabled)]), [SCREENSAVER=$enableval], [SCREENSAVER=yes])
 AC_ARG_ENABLE(xdmcp,          AS_HELP_STRING([--disable-xdmcp], [Build XDMCP extension (default: auto)]), [XDMCP=$enableval], [XDMCP=auto])
@@ -348,6 +349,14 @@ fi
 AM_CONDITIONAL(DPMSExtension, [test "x$DPMSExtension" = xyes])
 if test "x$DPMSExtension" = xyes; then
 	AC_DEFINE(DPMSExtension, 1, [Support DPMS extension])
+fi
+
+AM_CONDITIONAL(COMPOSITE, [test "x$COMPOSITE" = xyes])
+if test "x$COMPOSITE" = xyes; then
+	AC_DEFINE(COMPOSITE, 1, [Support Composite Extension])
+	REQUIRED_MODULES="$REQUIRED_MODULES compositeproto >= 0.4"
+	COMPOSITE_LIB='$(top_builddir)/composite/libcomposite.la'
+	COMPOSITE_INC='-I$(top_srcdir)/composite'
 fi
 
 RENDER_LIB='$(top_builddir)/render/librender.la'
@@ -494,7 +503,7 @@ if test "x$MONOTONIC_CLOCK" = xyes; then
     XSERVER_LIBS="$XSERVER_LIBS $LIBS"
 fi
 
-XSERVER_CFLAGS="$XSERVER_CFLAGS $CORE_INCS $XEXT_INC $DAMAGE_INC $FIXES_INC $MI_INC $MIEXT_SHADOW_INC $MIEXT_LAYER_INC $MIEXT_DAMAGE_INC $RENDER_INC $RANDR_INC $FB_INC"
+XSERVER_CFLAGS="$XSERVER_CFLAGS $CORE_INCS $XEXT_INC $COMPOSITE_INC $DAMAGE_INC $FIXES_INC $MI_INC $MIEXT_SHADOW_INC $MIEXT_LAYER_INC $MIEXT_DAMAGE_INC $RENDER_INC $RANDR_INC $FB_INC"
 AC_DEFINE_UNQUOTED(X_BYTE_ORDER,[$ENDIAN],[Endian order])
 
 AC_SUBST([XSERVER_LIBS])
@@ -560,7 +569,7 @@ if test "$KDRIVE" = yes; then
     # dix os fb mi extension glx (NOTYET) damage shadow
     #KDRIVE_PURE_LIBS="$DIX_LIB $OS_LIB $FB_LIB $XEXT_LIB $MIEXT_DAMAGE_LIB \
     #    $MIEXT_SHADOW_LIB"
-    KDRIVE_PURE_LIBS="$FB_LIB $MI_LIB $FIXES_LIB $XEXT_LIB $DBE_LIB $RENDER_LIB $RANDR_LIB $DAMAGE_LIB $MIEXT_DAMAGE_LIB $MIEXT_SHADOW_LIB $OS_LIB"
+    KDRIVE_PURE_LIBS="$FB_LIB $MI_LIB $FIXES_LIB $XEXT_LIB $DBE_LIB $RENDER_LIB $RANDR_LIB $DAMAGE_LIB $MIEXT_DAMAGE_LIB $MIEXT_SHADOW_LIB $COMPOSITE_LIB $OS_LIB"
     KDRIVE_LIB='$(top_builddir)/kdrive/src/libkdrive.a'
     case $host_os in
 	*linux*)
@@ -645,6 +654,7 @@ XORG_RELEASE_VERSION
 AC_OUTPUT([
 Makefile
 include/Makefile
+composite/Makefile
 damageext/Makefile
 dbe/Makefile
 dix/Makefile
