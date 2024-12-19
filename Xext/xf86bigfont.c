@@ -64,6 +64,7 @@
 #include "gcstruct.h"
 #include "dixfontstr.h"
 #include "extnsionst.h"
+#include "xfont2_compat.h"
 
 #define _XF86BIGFONT_SERVER_
 #include <X11/extensions/xf86bigfproto.h>
