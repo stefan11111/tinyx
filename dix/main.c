@@ -292,7 +292,7 @@ main(int argc, char *argv[], char *envp[])
 
         InitAtoms();
         InitEvents();
-        xfont2_init_glyph_caching();
+        InitGlyphCaching();
         ResetExtensionPrivates();
         ResetClientPrivates();
         ResetScreenPrivates();
@@ -300,7 +300,7 @@ main(int argc, char *argv[], char *envp[])
         ResetGCPrivates();
         ResetPixmapPrivates();
         ResetColormapPrivates();
-#if 0
+#ifndef XFONT2
         ResetFontPrivateIndex();
 #endif
         ResetDevicePrivateIndex();

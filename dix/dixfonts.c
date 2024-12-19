@@ -55,8 +55,6 @@ Equipment Corporation.
 #include <X11/X.h>
 #include <X11/Xmd.h>
 #include <X11/Xproto.h>
-#include <X11/fonts/fontstruct.h>
-#include <X11/fonts/libxfont2.h>
 #include "scrnintstr.h"
 #include "resource.h"
 #include "dixstruct.h"
@@ -65,6 +63,7 @@ Equipment Corporation.
 #include "opaque.h"
 #include "dixfontstr.h"
 #include "closestr.h"
+#include "xfont2_compat.h"
 
 #ifdef XF86BIGFONT
 #define _XF86BIGFONT_SERVER_
@@ -74,7 +73,7 @@ Equipment Corporation.
 
 #define QUERYCHARINFO(pci, pr)  *(pr) = (pci)->metrics
 
-extern void *fosNaturalParams;
+extern pointer fosNaturalParams;
 
 extern FontPtr defaultFont;
 
@@ -82,7 +81,12 @@ static FontPathElementPtr *font_path_elements = (FontPathElementPtr *) 0;
 
 static int num_fpes = 0;
 
-static xfont2_fpe_funcs_rec const **fpe_functions;
+#ifdef XFONT2
+_X_EXPORT xfont2_fpe_funcs_rec const **fpe_functions = (xfont2_fpe_funcs_rec const **) 0;
+#else
+_X_EXPORT FPEFunctions *_fpe_functions = (FPEFunctions *) 0;
+_X_EXPORT FPEFunctions **fpe_functions = &_fpe_functions;
+#endif
 
 static int num_fpe_types = 0;
 
@@ -94,7 +98,11 @@ static int size_slept_fpes = 0;
 
 static FontPathElementPtr *slept_fpes = (FontPathElementPtr *) 0;
 
+#ifdef XFONT2
 static xfont2_pattern_cache_ptr patternCache;
+#else
+static FontPatternCachePtr patternCache;
+#endif
 
 _X_EXPORT int
 FontToXError(err)
@@ -116,6 +124,7 @@ int err;
     }
 }
 
+#ifdef XFONT2
 void
 GetGlyphs(FontPtr font, unsigned long count, unsigned char *chars,
           FontEncoding fontEncoding,
@@ -124,7 +133,7 @@ GetGlyphs(FontPtr font, unsigned long count, unsigned char *chars,
 {
     (*font->get_glyphs) (font, count, chars, fontEncoding, glyphcount, glyphs);
 }
-
+#endif
 
 /*
  * adding RT_FONT prevents conflict with default cursor font
@@ -214,7 +223,11 @@ FontWakeup(pointer data, int count, pointer LastSelectMask)
     /* wake up any fpe's that may be waiting for information */
     for (i = 0; i < num_slept_fpes; i++) {
         fpe = slept_fpes[i];
+#ifdef XFONT2
         (void) (*fpe_functions[fpe->type]->wakeup_fpe) (fpe);
+#else
+        (void) (*fpe_functions[fpe->type]->wakeup_fpe) (fpe, LastSelectMask);
+#endif
     }
 }
 
@@ -357,8 +370,8 @@ doOpenFont(ClientPtr client, OFclosurePtr c)
         goto bail;
     }
     if (patternCache && pfont != c->non_cachable_font)
-        xfont2_cache_font_pattern(patternCache, c->origFontName, c->origFontNameLen,
-                                  pfont);
+        CacheFontPattern(patternCache, c->origFontName, c->origFontNameLen,
+                         pfont);
  bail:
     if (err != Successful && c->client != serverClient) {
         SendErrorToClient(c->client, X_OpenFont, 0,
@@ -415,7 +428,7 @@ OpenFont(ClientPtr client, XID fid, Mask flags, unsigned lenfname,
          ** having to create another instance of a font that already exists.
          */
 
-        cached = xfont2_find_cached_font_pattern(patternCache, pfontname, lenfname);
+        cached = FindCachedFontPattern(patternCache, pfontname, lenfname);
         if (cached && cached->info.cachable) {
             if (!AddResource(fid, RT_FONT, (pointer) cached))
                 return BadAlloc;
@@ -482,7 +495,7 @@ CloseFont(pointer value, XID fid)
         return (Success);
     if (--pfont->refcnt == 0) {
         if (patternCache)
-            xfont2_remove_cached_font_pattern(patternCache, pfont);
+            RemoveCachedFontPattern(patternCache, pfont);
         /*
          * since the last reference is gone, ask each screen to free any
          * storage it may have allocated locally for it.
@@ -696,11 +709,11 @@ doListFontsAndAliases(ClientPtr client, LFclosurePtr c)
             if (err == Successful) {
                 if (c->haveSaved) {
                     if (c->savedName)
-                        (void) xfont2_add_font_names_name(c->names, c->savedName,
+                        (void) AddFontNamesName(c->names, c->savedName,
                                                 c->savedNameLen);
                 }
                 else
-                    (void) xfont2_add_font_names_name(c->names, name, namelen);
+                    (void) AddFontNamesName(c->names, name, namelen);
             }
 
             /*
@@ -834,7 +847,7 @@ doListFontsAndAliases(ClientPtr client, LFclosurePtr c)
     free(c->fpe_list);
     if (c->savedName)
         free(c->savedName);
-    xfont2_free_font_names(names);
+    FreeFontNames(names);
     free(c);
     if (resolved)
         free(resolved);
@@ -866,7 +879,7 @@ ListFonts(ClientPtr client, unsigned char *pattern, unsigned length,
         free(c);
         return BadAlloc;
     }
-    c->names = xfont2_make_font_names_record(max_names < 100 ? max_names : 100);
+    c->names = MakeFontNamesRecord(max_names < 100 ? max_names : 100);
     if (!c->names) {
         free(c->fpe_list);
         free(c);
@@ -1743,7 +1756,7 @@ SetFontPathElements(int npaths, unsigned char *paths, int *bad, Bool persist)
     FreeFontPath(font_path_elements, num_fpes, FALSE);
     font_path_elements = fplist;
     if (patternCache)
-        xfont2_empty_font_pattern_cache(patternCache);
+        EmptyFontPatternCache(patternCache);
     num_fpes = valid_paths;
 
     return Success;
@@ -1865,6 +1878,22 @@ DeleteClientFontStuff(ClientPtr client)
     }
 }
 
+#ifndef XFONT2
+void
+InitFonts()
+{
+    patternCache = MakeFontPatternCache();
+
+    {
+#ifdef KDRIVESERVER
+        BuiltinRegisterFpeFunctions();
+#endif
+        FontFileRegisterFpeFunctions();
+    }
+}
+#endif
+
+#ifdef XFONT2
 _X_EXPORT XFONT_LTO
 Font
 get_new_font_client_id()
@@ -1892,17 +1921,18 @@ _client_auth_generation(ClientPtr client)
 {
     return 0;
 }
+#endif
 
 _X_EXPORT XFONT_LTO
 int
-get_default_point_size()
+GetDefaultPointSize()
 {
     return 120;
 }
 
 _X_EXPORT XFONT_LTO
 FontResolutionPtr
-get_client_resolutions(int *num)
+GetClientResolutions(int *num)
 {
     if (requestingClient && requestingClient->fontResFunc != NULL &&
         !requestingClient->clientGone) {
@@ -1934,24 +1964,138 @@ get_client_resolutions(int *num)
     }
 }
 
+#ifndef XFONT2
+
+/*
+ * returns the type index of the new fpe
+ *
+ * should be called (only once!) by each type of fpe when initialized
+ */
+
+_X_EXPORT XFONT_LTO
+int
+RegisterFPEFunctions(NameCheckFunc name_func,
+                     InitFpeFunc init_func,
+                     FreeFpeFunc free_func,
+                     ResetFpeFunc reset_func,
+                     OpenFontFunc open_func,
+                     CloseFontFunc close_func,
+                     ListFontsFunc list_func,
+                     StartLfwiFunc start_lfwi_func,
+                     NextLfwiFunc next_lfwi_func,
+                     WakeupFpeFunc wakeup_func,
+                     ClientDiedFunc client_died,
+                     LoadGlyphsFunc load_glyphs,
+                     StartLaFunc start_list_alias_func,
+                     NextLaFunc next_list_alias_func, SetPathFunc set_path_func)
+{
+    FPEFunctions *new;
+
+    /* grow the list */
+    new = (FPEFunctions *) realloc(*fpe_functions,
+                                    (num_fpe_types + 1) * sizeof(FPEFunctions));
+    if (!new)
+        return -1;
+    *fpe_functions = new;
+
+    fpe_functions[num_fpe_types]->name_check = name_func;
+    fpe_functions[num_fpe_types]->open_font = open_func;
+    fpe_functions[num_fpe_types]->close_font = close_func;
+    fpe_functions[num_fpe_types]->wakeup_fpe = wakeup_func;
+    fpe_functions[num_fpe_types]->list_fonts = list_func;
+    fpe_functions[num_fpe_types]->start_list_fonts_with_info = start_lfwi_func;
+    fpe_functions[num_fpe_types]->list_next_font_with_info = next_lfwi_func;
+    fpe_functions[num_fpe_types]->init_fpe = init_func;
+    fpe_functions[num_fpe_types]->free_fpe = free_func;
+    fpe_functions[num_fpe_types]->reset_fpe = reset_func;
+    fpe_functions[num_fpe_types]->client_died = client_died;
+    fpe_functions[num_fpe_types]->load_glyphs = load_glyphs;
+    fpe_functions[num_fpe_types]->start_list_fonts_and_aliases =
+        start_list_alias_func;
+    fpe_functions[num_fpe_types]->list_next_font_or_alias = next_list_alias_func;
+    fpe_functions[num_fpe_types]->set_path_hook = set_path_func;
+
+    return num_fpe_types++;
+}
+
+#endif
+
+void
+FreeFonts()
+{
+    if (patternCache) {
+        FreeFontPatternCache(patternCache);
+        patternCache = 0;
+    }
+    FreeFontPath(font_path_elements, num_fpes, TRUE);
+    font_path_elements = 0;
+    num_fpes = 0;
+    free((pointer)*fpe_functions);
+    num_fpe_types = 0;
+    *fpe_functions = (pointer) 0;
+}
+
+#ifdef XFONT2
 static uint32_t wrap_time_in_millis(void)
 {
     return GetTimeInMillis();
 }
+#endif
+
+/* convenience functions for FS interface */
+
+FontPtr
+find_old_font(XID id)
+{
+    return (FontPtr) SecurityLookupIDByType(NullClient, id, RT_NONE,
+                                            SecurityUnknownAccess);
+}
+
+#ifndef XFONT2
+_X_EXPORT XFONT_LTO
+Font
+GetNewFontClientID()
+{
+    return FakeClientID(0);
+}
+
+_X_EXPORT XFONT_LTO
+int
+StoreFontClientFont(FontPtr pfont, Font id)
+{
+    return AddResource(id, RT_NONE, (pointer) pfont);
+}
+
+_X_EXPORT XFONT_LTO
+void
+DeleteFontClientID(Font id)
+{
+    FreeResource(id, RT_NONE);
+}
+
+_X_EXPORT XFONT_LTO
+int
+client_auth_generation(ClientPtr client)
+{
+    return 0;
+}
+#endif
 
 static int fs_handlers_installed = 0;
 
 static unsigned int last_server_gen;
 
+#ifdef XFONT2
 static void
 adjust_fs_wait_for_delay(void *wt, unsigned long newdelay)
 {
     AdjustWaitForDelay(wt, newdelay);
 }
+#endif
 
 _X_EXPORT XFONT_LTO
 int
-_init_fs_handlers(FontPathElementPtr fpe, FontBlockHandlerProcPtr block_handler)
+init_fs_handlers(FontPathElementPtr fpe, BlockHandlerProcPtr block_handler)
 {
     /* if server has reset, make sure the b&w handlers are reinstalled */
     if (last_server_gen < serverGeneration) {
@@ -1959,6 +2103,8 @@ _init_fs_handlers(FontPathElementPtr fpe, FontBlockHandlerProcPtr block_handler)
         fs_handlers_installed = 0;
     }
     if (fs_handlers_installed == 0) {
+
+
         if (!RegisterBlockAndWakeupHandlers((BlockHandlerProcPtr)block_handler,
                                             FontWakeup, (pointer) 0))
             return AllocError;
@@ -1970,7 +2116,7 @@ _init_fs_handlers(FontPathElementPtr fpe, FontBlockHandlerProcPtr block_handler)
 
 _X_EXPORT XFONT_LTO
 void
-_remove_fs_handlers(FontPathElementPtr fpe, FontBlockHandlerProcPtr block_handler,
+remove_fs_handlers(FontPathElementPtr fpe, BlockHandlerProcPtr block_handler,
                    Bool all)
 {
     if (all) {
@@ -1978,13 +2124,14 @@ _remove_fs_handlers(FontPathElementPtr fpe, FontBlockHandlerProcPtr block_handle
         if (--fs_handlers_installed == 0) {
 
 
-            RemoveBlockAndWakeupHandlers((BlockHandlerProcPtr)block_handler, FontWakeup,
+            RemoveBlockAndWakeupHandlers(block_handler, FontWakeup,
                                          (pointer) 0);
         }
     }
     RemoveFontWakeup(fpe);
 }
 
+#ifdef XFONT2
 static int
 register_fpe_funcs(const xfont2_fpe_funcs_rec *funcs)
 {
@@ -2039,13 +2186,13 @@ static const xfont2_client_funcs_rec xfont2_client_funcs = {
     .delete_font_client_id = delete_font_client_id,
     .verrorf = VErrorF,
     .find_old_font = find_old_font,
-    .get_client_resolutions = get_client_resolutions,
-    .get_default_point_size = get_default_point_size,
+    .get_client_resolutions = GetClientResolutions,
+    .get_default_point_size = GetDefaultPointSize,
     .get_new_font_client_id = get_new_font_client_id,
     .get_time_in_millis = wrap_time_in_millis,
-    .init_fs_handlers = _init_fs_handlers,
+    .init_fs_handlers = (int (*)(FontPathElementPtr, FontBlockHandlerProcPtr))init_fs_handlers,
     .register_fpe_funcs = register_fpe_funcs,
-    .remove_fs_handlers = _remove_fs_handlers,
+    .remove_fs_handlers = (void (*)(FontPathElementPtr, FontBlockHandlerProcPtr, Bool))remove_fs_handlers,
     .get_server_client = get_server_client,
     .set_font_authorizations = set_font_authorizations,
     .store_font_client_font = store_font_Client_font,
@@ -2072,32 +2219,4 @@ InitFonts()
         FontFileRegisterFpeFunctions();
     }
 }
-
-
-void
-FreeFonts()
-{
-    if (patternCache) {
-        xfont2_free_font_pattern_cache(patternCache);
-        patternCache = 0;
-    }
-    FreeFontPath(font_path_elements, num_fpes, TRUE);
-    font_path_elements = 0;
-    num_fpes = 0;
-    free(fpe_functions);
-    num_fpe_types = 0;
-    fpe_functions = NULL;
-}
-
-/* convenience functions for FS interface */
-
-FontPtr
-find_old_font(XID id)
-{
-    return (FontPtr) SecurityLookupIDByType(NullClient, id, RT_NONE,
-                                            SecurityUnknownAccess);
-}
-
-
-
-
+#endif
