@@ -2,6 +2,10 @@ AUTOMAKE_OPTIONS = subdir-objects
 
 ACLOCAL_AMFLAGS=-I m4
 
+if COMPOSITE
+COMPOSITE_DIR=composite
+endif
+
 if DBE
 DBE_DIR=dbe
 endif
@@ -19,6 +23,7 @@ SUBDIRS = \
 	$(DBE_DIR) \
 	xfixes \
 	damageext \
+	$(COMPOSITE_DIR) \
 	kdrive
 
 DIST_SUBDIRS = \
@@ -34,4 +39,5 @@ DIST_SUBDIRS = \
 	dbe \
 	xfixes \
 	damageext \
+	composite \
 	kdrive
