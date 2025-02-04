@@ -729,6 +729,9 @@ static void MouseFirstProtocol(Kmouse * km, char *prot)
 			for (i = 0; i < NUM_PROT; i++)
 				ErrorF(" %s", kmouseProts[i]->name);
 			ErrorF("\n");
+			km->i_prot = 0;
+			km->prot = kmouseProts[km->i_prot];
+			ErrorF("Falling back to %s\n", km->prot->name);
 		} else {
 			km->prot = kmouseProts[km->i_prot];
 			if (km->tty && !km->prot->tty)
@@ -754,7 +757,7 @@ static void MouseNextProtocol(Kmouse * km)
 	do {
 		if (!km->prot)
 			km->i_prot = 0;
-		else if (++km->i_prot == NUM_PROT)
+		else if (++km->i_prot >= NUM_PROT)
 			km->i_prot = 0;
 		km->prot = kmouseProts[km->i_prot];
 	} while (km->prot->tty != km->tty);
