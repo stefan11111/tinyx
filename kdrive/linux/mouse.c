@@ -386,8 +386,7 @@ static const KmouseProt exps2Prot = {
 #define PSM_4DPLUS_ID           8
 
 static const unsigned char ps2_init[] = {
-	PSMC_ENABLE_DEV,
-	0,
+	PSMC_ENABLE_DEV
 };
 
 #define NINIT_PS2   1
@@ -397,7 +396,6 @@ static const unsigned char wheel_3button_init[] = {
 	PSMC_SET_SAMPLING_RATE, 100,
 	PSMC_SET_SAMPLING_RATE, 80,
 	PSMC_SEND_DEV_ID,
-	0,
 };
 
 #define NINIT_IMPS2 4
@@ -410,7 +408,6 @@ static const unsigned char wheel_5button_init[] = {
 	PSMC_SET_SAMPLING_RATE, 200,
 	PSMC_SET_SAMPLING_RATE, 80,
 	PSMC_SEND_DEV_ID,
-	0
 };
 
 #define NINIT_EXPS2 7
@@ -419,7 +416,6 @@ static const unsigned char intelli_init[] = {
 	PSMC_SET_SAMPLING_RATE, 200,
 	PSMC_SET_SAMPLING_RATE, 100,
 	PSMC_SET_SAMPLING_RATE, 80,
-	0
 };
 
 #define NINIT_INTELLI	3
@@ -456,9 +452,10 @@ static Bool ps2Init(KdMouseInfo * mi)
 	int id;
 	const unsigned char *init;
 	int ninit;
+	int len;
 
 	/* Send Intellimouse initialization sequence */
-	MouseWriteBytes(km->iob.fd, intelli_init, strlen((char *)intelli_init),
+	MouseWriteBytes(km->iob.fd, intelli_init, sizeof(intelli_init),
 			100);
 	/*
 	 * Send ID command
@@ -471,20 +468,23 @@ static Bool ps2Init(KdMouseInfo * mi)
 		init = wheel_3button_init;
 		ninit = NINIT_IMPS2;
 		km->prot = &imps2Prot;
+		len = sizeof(wheel_3button_init);
 		break;
 	case 4:
 		init = wheel_5button_init;
 		ninit = NINIT_EXPS2;
 		km->prot = &exps2Prot;
+		len = sizeof(wheel_5button_init);
 		break;
 	default:
 		init = ps2_init;
 		ninit = NINIT_PS2;
 		km->prot = &ps2Prot;
+		len = sizeof(ps2_init);
 		break;
 	}
 	if (init)
-		MouseWriteBytes(km->iob.fd, init, strlen((char *)init), 100);
+		MouseWriteBytes(km->iob.fd, init, len, 100);
 	/*
 	 * Flush out the available data to eliminate responses to the
 	 * initialization string.  Make sure any partial event is
