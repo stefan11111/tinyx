@@ -41,7 +41,6 @@
 #include "dix.h"
 #include "fb.h"
 #include "fboverlay.h"
-#include "shadow.h"
 #include "globals.h"
 
 #define KD_DPMS_NORMAL	    0
@@ -77,7 +76,6 @@ typedef struct _KdFrameBuffer {
 	int bitsPerPixel;
 	int pixelStride;
 	int byteStride;
-	Bool shadow;
 	unsigned long visuals;
 	Pixel redMask, greenMask, blueMask;
 	void *closure;
@@ -395,17 +393,6 @@ void KdResetMappedMode(CARD32 addr, CARD32 size, int mode);
 const KdMonitorTiming *KdFindMode(KdScreenInfo * screen,
 				  Bool(*supported) (KdScreenInfo *,
 						    const KdMonitorTiming *));
-
-/* kshadow.c */
-Bool KdShadowFbAlloc(KdScreenInfo * screen, Bool rotate);
-
-void KdShadowFbFree(KdScreenInfo * screen);
-
-Bool
-KdShadowSet(ScreenPtr pScreen, ShadowUpdateProc update,
-	    ShadowWindowProc window);
-
-void KdShadowUnset(ScreenPtr pScreen);
 
 /* function prototypes to be implemented by the drivers */
 void InitCard(char *name) XFONT_LTO;

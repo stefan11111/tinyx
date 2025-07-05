@@ -315,11 +315,6 @@ static Bool fbdevMapFramebuffer(KdScreenInfo * screen)
 	KdMouseMatrix m;
 	FbdevPriv *priv = screen->card->driver;
 
-	if (priv->fix.type != FB_TYPE_PACKED_PIXELS)
-		scrpriv->shadow = TRUE;
-	else
-		scrpriv->shadow = FALSE;
-
 	KdComputeMouseMatrix(&m, screen->width, screen->height);
 
 	KdSetMouseMatrix(&m);
@@ -329,18 +324,12 @@ static Bool fbdevMapFramebuffer(KdScreenInfo * screen)
 	screen->memory_base = (CARD8 *) (priv->fb);
 	screen->memory_size = priv->fix.smem_len;
 
-	if (scrpriv->shadow) {
-		if (!KdShadowFbAlloc(screen, 0))
-			return FALSE;
-		screen->off_screen_base = screen->memory_size;
-	} else {
 		screen->fb.byteStride = priv->fix.line_length;
 		screen->fb.pixelStride = (priv->fix.line_length * 8 /
 					     priv->var.bits_per_pixel);
 		screen->fb.frameBuffer = (CARD8 *) (priv->fb);
 		screen->off_screen_base =
 		    screen->fb.byteStride * screen->height;
-	}
 
 	return TRUE;
 }
@@ -356,39 +345,6 @@ static void fbdevSetScreenSizes(ScreenPtr pScreen)
 		pScreen->height = priv->var.yres;
 		pScreen->mmWidth = screen->width_mm;
 		pScreen->mmHeight = screen->height_mm;
-}
-
-static Bool fbdevUnmapFramebuffer(KdScreenInfo * screen)
-{
-	KdShadowFbFree(screen);
-	return TRUE;
-}
-
-static Bool fbdevSetShadow(ScreenPtr pScreen)
-{
-	KdScreenPriv(pScreen);
-	KdScreenInfo *screen = pScreenPriv->screen;
-	FbdevScrPriv *scrpriv = screen->driver;
-	FbdevPriv *priv = screen->card->driver;
-	ShadowUpdateProc update;
-	ShadowWindowProc window;
-	int useYX = 0;
-
-#ifdef __arm__
-	/* Use variant copy routines that always read left to right in the
-	   shadow framebuffer.  Reading vertical strips is exceptionally
-	   slow on XScale due to cache effects.  */
-	useYX = 1;
-#endif
-
-	window = fbdevWindowLinear;
-	update = 0;
-
-	if (priv->fix.type != FB_TYPE_PACKED_PIXELS)
-		FatalError("Unsupported frame buffer type %u\n", priv->fix.type);
-
-		update = shadowUpdatePacked;
-	return KdShadowSet(pScreen, update, window);
 }
 
 static Bool fbdevCreateColormap(ColormapPtr pmap)
@@ -432,15 +388,12 @@ Bool fbdevInitScreen(ScreenPtr pScreen)
 
 Bool fbdevFinishInitScreen(ScreenPtr pScreen)
 {
-	if (!shadowSetup(pScreen))
-		return FALSE;
-
 	return TRUE;
 }
 
 Bool fbdevCreateResources(ScreenPtr pScreen)
 {
-	return fbdevSetShadow(pScreen);
+	return TRUE;
 }
 
 void fbdevPreserve(KdCardInfo * card)

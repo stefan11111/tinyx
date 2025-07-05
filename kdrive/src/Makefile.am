@@ -17,7 +17,6 @@ libkdrive_a_SOURCES =	\
 	kkeymap.h	\
 	kmap.c		\
 	kmode.c		\
-	kshadow.c	\
         ../../mi/miinitext.c
 
 libkdrivestubs_a_SOURCES = \
