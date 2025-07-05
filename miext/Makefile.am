@@ -1,2 +1,2 @@
-SUBDIRS = damage shadow
-DIST_SUBDIRS = damage shadow
+SUBDIRS = damage
+DIST_SUBDIRS = damage

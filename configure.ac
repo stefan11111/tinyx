@@ -414,8 +414,6 @@ MI_EXT_LIB='$(top_builddir)/mi/libmiext.la'
 MI_INC='-I$(top_srcdir)/mi'
 FB_LIB='$(top_builddir)/fb/libfb.la'
 FB_INC='-I$(top_srcdir)/fb'
-MIEXT_SHADOW_INC='-I$(top_srcdir)/miext/shadow'
-MIEXT_SHADOW_LIB='$(top_builddir)/miext/shadow/libshadow.la'
 CORE_INCS='-I$(top_srcdir)/include -I$(top_builddir)/include'
 
 PKG_CHECK_MODULES([XSERVERCFLAGS], [$REQUIRED_MODULES $REQUIRED_LIBS])
@@ -463,7 +461,7 @@ if test "x$MONOTONIC_CLOCK" = xyes; then
     XSERVER_LIBS="$XSERVER_LIBS $LIBS"
 fi
 
-XSERVER_CFLAGS="$XSERVER_CFLAGS $CORE_INCS $DAMAGE_INC $FIXES_INC $MI_INC $MIEXT_SHADOW_INC $MIEXT_LAYER_INC $MIEXT_DAMAGE_INC $RENDER_INC $FB_INC"
+XSERVER_CFLAGS="$XSERVER_CFLAGS $CORE_INCS $DAMAGE_INC $FIXES_INC $MI_INC $MIEXT_DAMAGE_INC $RENDER_INC $FB_INC"
 AC_DEFINE_UNQUOTED(X_BYTE_ORDER,[$ENDIAN],[Endian order])
 
 AC_SUBST([XSERVER_LIBS])
@@ -511,18 +509,17 @@ if test "$KDRIVE" = yes; then
         fi
     fi
     
-    # damage shadow extension fb mi
+    # damage extension fb mi
     KDRIVE_INC='-I$(top_srcdir)/kdrive/src'
-    KDRIVE_PURE_INCS="$KDRIVE_INC $MIEXT_DAMAGE_INC $MIEXT_SHADOW_INC $FB_INC $MI_INC"
+    KDRIVE_PURE_INCS="$KDRIVE_INC $MIEXT_DAMAGE_INC $FB_INC $MI_INC"
     KDRIVE_OS_INC='-I$(top_srcdir)/kdrive/linux'
     KDRIVE_INCS="$KDRIVE_PURE_INCS $KDRIVE_OS_INC"
     
     KDRIVE_CFLAGS="$XSERVER_CFLAGS -DHAVE_KDRIVE_CONFIG_H"
 
-    # dix os fb mi extension glx (NOTYET) damage shadow
-    #KDRIVE_PURE_LIBS="$DIX_LIB $OS_LIB $FB_LIB $MIEXT_DAMAGE_LIB \
-    #    $MIEXT_SHADOW_LIB"
-    KDRIVE_PURE_LIBS="$FB_LIB $MI_LIB $FIXES_LIB $RENDER_LIB $DAMAGE_LIB $MIEXT_DAMAGE_LIB $MIEXT_SHADOW_LIB $OS_LIB"
+    # dix os fb mi extension glx (NOTYET) damage
+    #KDRIVE_PURE_LIBS="$DIX_LIB $OS_LIB $FB_LIB $MIEXT_DAMAGE_LIB"
+    KDRIVE_PURE_LIBS="$FB_LIB $MI_LIB $FIXES_LIB $RENDER_LIB $DAMAGE_LIB $MIEXT_DAMAGE_LIB $OS_LIB"
     KDRIVE_LIB='$(top_builddir)/kdrive/src/libkdrive.a'
     case $host_os in
 	*linux*)
@@ -612,7 +609,6 @@ fb/Makefile
 mi/Makefile
 miext/Makefile
 miext/damage/Makefile
-miext/shadow/Makefile
 os/Makefile
 render/Makefile
 xfixes/Makefile
