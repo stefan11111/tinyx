@@ -40,7 +40,6 @@ from The Open Group.
 #include "miline.h"
 #define _XSHM_SERVER_
 #include <X11/extensions/XShm.h>
-#include "shmint.h"
 
 /* We use this structure to propogate some information from miScreenInit to
  * miCreateScreenResources.  miScreenInit allocates the structure, fills it
@@ -240,7 +239,6 @@ miScreenInit(pScreen, pbits, xsize, ysize, dpix, dpiy, width,
     pScreen->visuals = visuals;
     if (width)
     {
-	ShmRegisterFbFuncs(pScreen);
 	pScreen->CloseScreen = miCloseScreen;
     }
     /* else CloseScreen */

@@ -252,14 +252,6 @@ AC_ARG_ENABLE(libXfont2,       AS_HELP_STRING([--enable-libXfont2],
 				  [Build with libXfont2 (default: disabled)]),
 				[XFONT2=$enableval], [XFONT2=no])
 
-dnl Extensions.
-AC_ARG_ENABLE(xres,           AS_HELP_STRING([--disable-xres], [Build XRes extension (default: enabled)]), [RES=$enableval], [RES=yes])
-AC_ARG_ENABLE(screensaver,    AS_HELP_STRING([--disable-screensaver], [Build ScreenSaver extension (default: enabled)]), [SCREENSAVER=$enableval], [SCREENSAVER=yes])
-AC_ARG_ENABLE(xdmcp,          AS_HELP_STRING([--disable-xdmcp], [Build XDMCP extension (default: auto)]), [XDMCP=$enableval], [XDMCP=auto])
-AC_ARG_ENABLE(xdm-auth-1,     AS_HELP_STRING([--disable-xdm-auth-1], [Build XDM-Auth-1 extension (default: auto)]), [XDMAUTH=$enableval], [XDMAUTH=auto])
-AC_ARG_ENABLE(dbe,            AS_HELP_STRING([--disable-dbe], [Build DBE extension (default: enabled)]), [DBE=$enableval], [DBE=yes])
-AC_ARG_ENABLE(xf86bigfont,    AS_HELP_STRING([--disable-xf86bigfont], [Build XF86 Big Font extension (default: enabled)]), [XF86BIGFONT=$enableval], [XF86BIGFONT=yes])
-AC_ARG_ENABLE(dpms,           AS_HELP_STRING([--disable-dpms], [Build DPMS extension (default: enabled)]), [DPMSExtension=$enableval], [DPMSExtension=yes])
 
 dnl kdrive and its subsystems
 AC_ARG_ENABLE(kdrive,         AS_HELP_STRING([--enable-kdrive], [Build kdrive servers (default: yes)]), [KDRIVE=$enableval], [KDRIVE=yes])
@@ -315,12 +307,7 @@ if test "x$INT10" = xyes; then
 	AC_CHECK_HEADERS([sys/vm86.h sys/io.h])
 fi
 
-dnl ---------------------------------------------------------------------------
-dnl Extension section
-dnl ---------------------------------------------------------------------------
-XEXT_INC='-I$(top_srcdir)/Xext'
-XEXT_LIB='$(top_builddir)/Xext/libXext.la'
-XEXTXORG_LIB='$(top_builddir)/Xext/libXextbuiltin.la'
+
 
 AM_CONDITIONAL(DEBUG, test "x$DEBUGGING" = xyes)
 
@@ -332,35 +319,9 @@ else
 fi
 
 dnl Core modules for most extensions, et al.
-REQUIRED_MODULES="[randrproto >= 1.2] renderproto [fixesproto >= 4.0] [damageproto >= 1.1] xcmiscproto xextproto xproto xtrans xf86bigfontproto [scrnsaverproto >= 1.1] bigreqsproto resourceproto fontsproto inputproto [kbproto >= 1.0.3]"
+REQUIRED_MODULES="[randrproto >= 1.2] renderproto [fixesproto >= 4.0] [damageproto >= 1.1] xcmiscproto xproto xtrans xf86bigfontproto [scrnsaverproto >= 1.1] bigreqsproto resourceproto fontsproto inputproto [kbproto >= 1.0.3]"
 REQUIRED_LIBS="$XFONT_LIB fontenc"
 
-AM_CONDITIONAL(SCREENSAVER, [test "x$SCREENSAVER" = xyes])
-if test "x$SCREENSAVER" = xyes; then
-	AC_DEFINE(SCREENSAVER, 1, [Support MIT-SCREEN-SAVER extension])
-fi
-
-AM_CONDITIONAL(RES, [test "x$RES" = xyes])
-if test "x$RES" = xyes; then
-	AC_DEFINE(RES, 1, [Support X resource extension])
-	REQUIRED_MODULES="$REQUIRED_MODULES resourceproto"
-fi
-
-AM_CONDITIONAL(DBE, [test "x$DBE" = xyes])
-if test "x$DBE" = xyes; then
-	AC_DEFINE(DBE, 1, [Support DBE extension])
-	DBE_LIB='$(top_builddir)/dbe/libdbe.la'
-fi
-
-AM_CONDITIONAL(XF86BIGFONT, [test "x$XF86BIGFONT" = xyes])
-if test "x$XF86BIGFONT" = xyes; then
-	AC_DEFINE(XF86BIGFONT, 1, [Support XF86 Big font extension])
-fi
-
-AM_CONDITIONAL(DPMSExtension, [test "x$DPMSExtension" = xyes])
-if test "x$DPMSExtension" = xyes; then
-	AC_DEFINE(DPMSExtension, 1, [Support DPMS extension])
-fi
 
 RENDER_LIB='$(top_builddir)/render/librender.la'
 RENDER_INC='-I$(top_srcdir)/render'
@@ -506,7 +467,7 @@ if test "x$MONOTONIC_CLOCK" = xyes; then
     XSERVER_LIBS="$XSERVER_LIBS $LIBS"
 fi
 
-XSERVER_CFLAGS="$XSERVER_CFLAGS $CORE_INCS $XEXT_INC $DAMAGE_INC $FIXES_INC $MI_INC $MIEXT_SHADOW_INC $MIEXT_LAYER_INC $MIEXT_DAMAGE_INC $RENDER_INC $RANDR_INC $FB_INC"
+XSERVER_CFLAGS="$XSERVER_CFLAGS $CORE_INCS $DAMAGE_INC $FIXES_INC $MI_INC $MIEXT_SHADOW_INC $MIEXT_LAYER_INC $MIEXT_DAMAGE_INC $RENDER_INC $RANDR_INC $FB_INC"
 AC_DEFINE_UNQUOTED(X_BYTE_ORDER,[$ENDIAN],[Endian order])
 
 AC_SUBST([XSERVER_LIBS])
@@ -563,16 +524,16 @@ if test "$KDRIVE" = yes; then
     
     # damage shadow extension fb mi
     KDRIVE_INC='-I$(top_srcdir)/kdrive/src'
-    KDRIVE_PURE_INCS="$KDRIVE_INC $MIEXT_DAMAGE_INC $MIEXT_SHADOW_INC $XEXT_INC $FB_INC $MI_INC"
+    KDRIVE_PURE_INCS="$KDRIVE_INC $MIEXT_DAMAGE_INC $MIEXT_SHADOW_INC $FB_INC $MI_INC"
     KDRIVE_OS_INC='-I$(top_srcdir)/kdrive/linux'
     KDRIVE_INCS="$KDRIVE_PURE_INCS $KDRIVE_OS_INC"
     
     KDRIVE_CFLAGS="$XSERVER_CFLAGS -DHAVE_KDRIVE_CONFIG_H"
 
     # dix os fb mi extension glx (NOTYET) damage shadow
-    #KDRIVE_PURE_LIBS="$DIX_LIB $OS_LIB $FB_LIB $XEXT_LIB $MIEXT_DAMAGE_LIB \
+    #KDRIVE_PURE_LIBS="$DIX_LIB $OS_LIB $FB_LIB $MIEXT_DAMAGE_LIB \
     #    $MIEXT_SHADOW_LIB"
-    KDRIVE_PURE_LIBS="$FB_LIB $MI_LIB $FIXES_LIB $XEXT_LIB $DBE_LIB $RENDER_LIB $RANDR_LIB $DAMAGE_LIB $MIEXT_DAMAGE_LIB $MIEXT_SHADOW_LIB $OS_LIB"
+    KDRIVE_PURE_LIBS="$FB_LIB $MI_LIB $FIXES_LIB $RENDER_LIB $RANDR_LIB $DAMAGE_LIB $MIEXT_DAMAGE_LIB $MIEXT_SHADOW_LIB $OS_LIB"
     KDRIVE_LIB='$(top_builddir)/kdrive/src/libkdrive.a'
     case $host_os in
 	*linux*)
@@ -658,7 +619,6 @@ AC_OUTPUT([
 Makefile
 include/Makefile
 damageext/Makefile
-dbe/Makefile
 dix/Makefile
 fb/Makefile
 mi/Makefile
@@ -668,7 +628,6 @@ miext/shadow/Makefile
 os/Makefile
 randr/Makefile
 render/Makefile
-Xext/Makefile
 xfixes/Makefile
 kdrive/Makefile
 kdrive/fbdev/Makefile

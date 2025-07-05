@@ -30,7 +30,6 @@
 
 #include "fb.h"
 #include "fboverlay.h"
-#include "shmint.h"
 
 int fbOverlayGeneration;
 
@@ -391,7 +390,6 @@ fbOverlayFinishScreenInit(ScreenPtr pScreen,
         ))
         return FALSE;
     /* MI thinks there's no frame buffer */
-    ShmRegisterFbFuncs(pScreen);
     pScreen->minInstalledCmaps = 1;
     pScreen->maxInstalledCmaps = 2;
 

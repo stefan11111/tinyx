@@ -152,50 +152,7 @@ SProcXFixesCreateRegionFromBitmap(ClientPtr client)
 int
 ProcXFixesCreateRegionFromWindow(ClientPtr client)
 {
-    RegionPtr pRegion;
-
-    Bool copy = TRUE;
-
-    WindowPtr pWin;
-
-    REQUEST(xXFixesCreateRegionFromWindowReq);
-
-    REQUEST_SIZE_MATCH(xXFixesCreateRegionFromWindowReq);
-    LEGAL_NEW_RESOURCE(stuff->region, client);
-    pWin = (WindowPtr) LookupIDByType(stuff->window, RT_WINDOW);
-    if (!pWin) {
-        client->errorValue = stuff->window;
-        return BadWindow;
-    }
-    switch (stuff->kind) {
-    case WindowRegionBounding:
-        pRegion = wBoundingShape(pWin);
-        if (!pRegion)
-        {
-            pRegion = CreateBoundingShape(pWin);
-            copy = FALSE;
-        }
-        break;
-    case WindowRegionClip:
-        pRegion = wClipShape(pWin);
-        if (!pRegion)
-        {
-            pRegion = CreateClipShape(pWin);
-            copy = FALSE;
-        }
-        break;
-    default:
-        client->errorValue = stuff->kind;
-        return BadValue;
-    }
-    if (copy && pRegion)
-        pRegion = XFixesRegionCopy(pRegion);
-    if (!pRegion)
-        return BadAlloc;
-    if (!AddResource(stuff->region, RegionResType, (pointer) pRegion))
-        return BadAlloc;
-
-    return (client->noClientException);
+    return BadImplementation;
 }
 
 int
@@ -742,8 +699,8 @@ ProcXFixesSetWindowShapeRegion(ClientPtr client)
     if (*pDestRegion)
         REGION_DESTROY(*pDestRegion);
     *pDestRegion = pRegion;
-    (*pScreen->SetShape) (pWin);
-    SendShapeNotify(pWin, stuff->destKind);
+    if (pScreen->SetShape)
+        (*pScreen->SetShape) (pWin);
     return (client->noClientException);
 }
 
