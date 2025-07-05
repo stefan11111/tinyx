@@ -255,7 +255,6 @@ AC_ARG_ENABLE(libXfont2,       AS_HELP_STRING([--enable-libXfont2],
 
 dnl kdrive and its subsystems
 AC_ARG_ENABLE(kdrive,         AS_HELP_STRING([--enable-kdrive], [Build kdrive servers (default: yes)]), [KDRIVE=$enableval], [KDRIVE=yes])
-AC_ARG_ENABLE(xvesa,          AS_HELP_STRING([--disable-xvesa], [Build Xvesa server (default: yes)]), [XVESA=$enableval], [XVESA=yes])
 AC_ARG_ENABLE(xfbdev,         AS_HELP_STRING([--disable-xfbdev], [Build Xfbdev server (default: yes)]), [XFBDEV=$enableval], [XFBDEV=yes])
 
 
@@ -508,13 +507,6 @@ if test "$KDRIVE" = yes; then
     AC_DEFINE(KDRIVESERVER,1,[Build Kdrive X server])
     AC_DEFINE(KDRIVEDDXACTIONS,,[Build kdrive ddx])
 
-    AC_CHECK_HEADERS([asm/vm86.h sys/io.h])
-    if test "$ac_cv_header_asm_vm86_h" = yes; then
-        if test "x$XVESA" != "xno"; then
-            AC_DEFINE(KDRIVEVESA, 1, [Build VESA-based kdrive servers])
-        fi
-    fi
-
     AC_CHECK_HEADERS([linux/fb.h])
     if test "$ac_cv_header_linux_fb_h" = yes; then
         if test "x$XFBDEV" != "xno"; then
@@ -550,7 +542,6 @@ AC_SUBST(KDRIVE_CFLAGS)
 AC_SUBST(KDRIVE_PURE_LIBS)
 AC_SUBST(KDRIVE_LIBS)
 AM_CONDITIONAL(KDRIVELINUX, [test "x$KDRIVELINUX" = xyes])
-AM_CONDITIONAL(KDRIVEVESA, [test x"$ac_cv_header_asm_vm86_h" = xyes -a "x$XVESA" != "xno"])
 AM_CONDITIONAL(KDRIVEFBDEV, [test x"$ac_cv_header_linux_fb_h" = xyes -a "x$XFBDEV" != "xno"])
 
 dnl and the rest of these are generic, so they're in config.h
@@ -633,5 +624,4 @@ kdrive/Makefile
 kdrive/fbdev/Makefile
 kdrive/linux/Makefile
 kdrive/src/Makefile
-kdrive/vesa/Makefile
 ])

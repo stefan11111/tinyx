@@ -1,7 +1,3 @@
-if KDRIVEVESA
-VESA_SUBDIRS = vesa
-endif
-
 if KDRIVEFBDEV
 FBDEV_SUBDIRS = fbdev
 endif
@@ -13,7 +9,6 @@ endif
 SUBDIRS =			\
 	src			\
 	$(LINUX_SUBDIRS)	\
-	$(FBDEV_SUBDIRS)	\
-	$(VESA_SUBDIRS)
+	$(FBDEV_SUBDIRS)
 
-DIST_SUBDIRS = vesa fbdev src linux
+DIST_SUBDIRS = fbdev src linux
