@@ -258,8 +258,6 @@ ProcDamageSubtract(ClientPtr client)
 
     REQUEST_SIZE_MATCH(xDamageSubtractReq);
     VERIFY_DAMAGEEXT(pDamageExt, stuff->damage, client, SecurityWriteAccess);
-    VERIFY_REGION_OR_NONE(pRepair, stuff->repair, client, SecurityWriteAccess);
-    VERIFY_REGION_OR_NONE(pParts, stuff->parts, client, SecurityWriteAccess);
 
     if (pDamageExt->level != DamageReportRawRegion) {
         DamagePtr pDamage = pDamageExt->pDamage;
@@ -290,7 +288,6 @@ ProcDamageAdd(ClientPtr client)
     RegionPtr pRegion;
 
     REQUEST_SIZE_MATCH(xDamageAddReq);
-    VERIFY_REGION(pRegion, stuff->region, client, SecurityWriteAccess);
     SECURITY_VERIFY_DRAWABLE(pDrawable, stuff->drawable, client,
                              SecurityReadAccess);
 

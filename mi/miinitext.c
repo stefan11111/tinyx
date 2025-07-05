@@ -60,7 +60,6 @@ SOFTWARE.
 
 
 extern Bool noRenderExtension;
-extern Bool noXFixesExtension;
 
 #define INITARGS void
 typedef void (*InitExtension)(INITARGS);
@@ -78,7 +77,6 @@ typedef void (*InitExtension)(INITARGS);
 
 /* FIXME: this whole block of externs should be from the appropriate headers */
 extern void RenderExtensionInit(INITARGS);
-extern void XFixesExtensionInit(INITARGS);
 extern void DamageExtensionInit(INITARGS);
 
 /* The following is only a small first step towards run-time
@@ -94,7 +92,6 @@ static const ExtensionToggle ExtensionToggleList[] =
     /* sort order is extension name string as shown in xdpyinfo */
     { "DAMAGE", &noDamageExtension },
     { "RENDER", &noRenderExtension },
-    { "XFIXES", &noXFixesExtension },
     { NULL, NULL }
 };
 
@@ -130,8 +127,6 @@ InitExtensions(argc, argv)
     int		argc;
     char	*argv[];
 {
-    /* must be before Render to layer DisplayCursor correctly */
-    if (!noXFixesExtension) XFixesExtensionInit();
     if (!noRenderExtension) RenderExtensionInit();
     if (!noDamageExtension) DamageExtensionInit();
 }

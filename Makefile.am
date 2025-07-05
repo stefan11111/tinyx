@@ -10,7 +10,6 @@ SUBDIRS = \
 	miext \
 	os \
 	render  \
-	xfixes \
 	damageext \
 	kdrive
 
@@ -22,6 +21,5 @@ DIST_SUBDIRS = \
 	miext \
 	os \
 	render  \
-	xfixes \
 	damageext \
 	kdrive

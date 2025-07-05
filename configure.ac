@@ -318,15 +318,12 @@ else
 fi
 
 dnl Core modules for most extensions, et al.
-REQUIRED_MODULES="renderproto [fixesproto >= 4.0] [damageproto >= 1.1] xcmiscproto xproto xtrans xf86bigfontproto [scrnsaverproto >= 1.1] bigreqsproto resourceproto fontsproto inputproto [kbproto >= 1.0.3]"
+REQUIRED_MODULES="renderproto [damageproto >= 1.1] xcmiscproto xproto xtrans xf86bigfontproto [scrnsaverproto >= 1.1] bigreqsproto resourceproto fontsproto inputproto [kbproto >= 1.0.3]"
 REQUIRED_LIBS="$XFONT_LIB fontenc"
 
 
 RENDER_LIB='$(top_builddir)/render/librender.la'
 RENDER_INC='-I$(top_srcdir)/render'
-
-FIXES_LIB='$(top_builddir)/xfixes/libxfixes.la'
-FIXES_INC='-I$(top_srcdir)/xfixes'
 
 DAMAGE_LIB='$(top_builddir)/damageext/libdamageext.la'
 DAMAGE_INC='-I$(top_srcdir)/damageext'
@@ -461,7 +458,7 @@ if test "x$MONOTONIC_CLOCK" = xyes; then
     XSERVER_LIBS="$XSERVER_LIBS $LIBS"
 fi
 
-XSERVER_CFLAGS="$XSERVER_CFLAGS $CORE_INCS $DAMAGE_INC $FIXES_INC $MI_INC $MIEXT_DAMAGE_INC $RENDER_INC $FB_INC"
+XSERVER_CFLAGS="$XSERVER_CFLAGS $CORE_INCS $DAMAGE_INC $MI_INC $MIEXT_DAMAGE_INC $RENDER_INC $FB_INC"
 AC_DEFINE_UNQUOTED(X_BYTE_ORDER,[$ENDIAN],[Endian order])
 
 AC_SUBST([XSERVER_LIBS])
@@ -519,7 +516,7 @@ if test "$KDRIVE" = yes; then
 
     # dix os fb mi extension glx (NOTYET) damage
     #KDRIVE_PURE_LIBS="$DIX_LIB $OS_LIB $FB_LIB $MIEXT_DAMAGE_LIB"
-    KDRIVE_PURE_LIBS="$FB_LIB $MI_LIB $FIXES_LIB $RENDER_LIB $DAMAGE_LIB $MIEXT_DAMAGE_LIB $OS_LIB"
+    KDRIVE_PURE_LIBS="$FB_LIB $MI_LIB $RENDER_LIB $DAMAGE_LIB $MIEXT_DAMAGE_LIB $OS_LIB"
     KDRIVE_LIB='$(top_builddir)/kdrive/src/libkdrive.a'
     case $host_os in
 	*linux*)
@@ -611,7 +608,6 @@ miext/Makefile
 miext/damage/Makefile
 os/Makefile
 render/Makefile
-xfixes/Makefile
 kdrive/Makefile
 kdrive/fbdev/Makefile
 kdrive/linux/Makefile

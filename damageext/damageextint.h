@@ -39,7 +39,6 @@
 #include "scrnintstr.h"
 #include "damageext.h"
 #include "damage.h"
-#include "xfixes.h"
 
 extern unsigned char DamageReqCode;
 
