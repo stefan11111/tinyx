@@ -247,8 +247,6 @@ static const KdMonitorTiming kdMonitorTimings[] = {
 
 #define NUM_MONITOR_TIMINGS (sizeof kdMonitorTimings/sizeof kdMonitorTimings[0])
 
-static const int kdNumMonitorTimings = NUM_MONITOR_TIMINGS;
-
 const KdMonitorTiming *KdFindMode(KdScreenInfo * screen,
 				  Bool(*supported) (KdScreenInfo *,
 						    const KdMonitorTiming *))

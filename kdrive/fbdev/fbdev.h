@@ -41,10 +41,6 @@ typedef struct _fbdevPriv {
 	char *fb_base;
 } FbdevPriv;
 
-typedef struct _fbdevScrPriv {
-	Bool shadow;
-} FbdevScrPriv;
-
 extern const char *fbdevDevicePath;
 
 Bool fbdevCardInit(KdCardInfo * card);

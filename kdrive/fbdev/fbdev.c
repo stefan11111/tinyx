@@ -141,7 +141,7 @@ fbdevConvertMonitorTiming(const KdMonitorTiming * t,
 		var->sync |= FB_SYNC_VERT_HIGH_ACT;
 }
 
-static Bool fbdevScreenInitialize(KdScreenInfo * screen, FbdevScrPriv * scrpriv)
+Bool fbdevScreenInit(KdScreenInfo * screen)
 {
 	FbdevPriv *priv = screen->card->driver;
 	Pixel allbits;
@@ -280,38 +280,8 @@ static Bool fbdevScreenInitialize(KdScreenInfo * screen, FbdevScrPriv * scrpriv)
 	return fbdevMapFramebuffer(screen);
 }
 
-Bool fbdevScreenInit(KdScreenInfo * screen)
-{
-	FbdevScrPriv *scrpriv;
-
-	scrpriv = calloc(1, sizeof(FbdevScrPriv));
-	if (!scrpriv)
-		return FALSE;
-	screen->driver = scrpriv;
-	if (!fbdevScreenInitialize(screen, scrpriv)) {
-		screen->driver = 0;
-		free(scrpriv);
-		return FALSE;
-	}
-	return TRUE;
-}
-
-static void *fbdevWindowLinear(ScreenPtr pScreen,
-			CARD32 row,
-			CARD32 offset, int mode, CARD32 * size, void *closure)
-{
-	KdScreenPriv(pScreen);
-	FbdevPriv *priv = pScreenPriv->card->driver;
-
-	if (!pScreenPriv->enabled)
-		return 0;
-	*size = priv->fix.line_length;
-	return (CARD8 *) priv->fb + row * priv->fix.line_length + offset;
-}
-
 static Bool fbdevMapFramebuffer(KdScreenInfo * screen)
 {
-	FbdevScrPriv *scrpriv = screen->driver;
 	KdMouseMatrix m;
 	FbdevPriv *priv = screen->card->driver;
 
@@ -332,19 +302,6 @@ static Bool fbdevMapFramebuffer(KdScreenInfo * screen)
 		    screen->fb.byteStride * screen->height;
 
 	return TRUE;
-}
-
-static void fbdevSetScreenSizes(ScreenPtr pScreen)
-{
-	KdScreenPriv(pScreen);
-	KdScreenInfo *screen = pScreenPriv->screen;
-	FbdevScrPriv *scrpriv = screen->driver;
-	FbdevPriv *priv = screen->card->driver;
-
-		pScreen->width = priv->var.xres;
-		pScreen->height = priv->var.yres;
-		pScreen->mmWidth = screen->width_mm;
-		pScreen->mmHeight = screen->height_mm;
 }
 
 static Bool fbdevCreateColormap(ColormapPtr pmap)
