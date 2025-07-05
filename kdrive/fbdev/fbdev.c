@@ -277,8 +277,6 @@ static Bool fbdevScreenInitialize(KdScreenInfo * screen, FbdevScrPriv * scrpriv)
 	screen->fb.depth = depth;
 	screen->fb.bitsPerPixel = priv->var.bits_per_pixel;
 
-	scrpriv->randr = screen->randr;
-
 	return fbdevMapFramebuffer(screen);
 }
 
@@ -317,13 +315,12 @@ static Bool fbdevMapFramebuffer(KdScreenInfo * screen)
 	KdMouseMatrix m;
 	FbdevPriv *priv = screen->card->driver;
 
-	if (scrpriv->randr != RR_Rotate_0 ||
-		priv->fix.type != FB_TYPE_PACKED_PIXELS)
+	if (priv->fix.type != FB_TYPE_PACKED_PIXELS)
 		scrpriv->shadow = TRUE;
 	else
 		scrpriv->shadow = FALSE;
 
-	KdComputeMouseMatrix(&m, scrpriv->randr, screen->width, screen->height);
+	KdComputeMouseMatrix(&m, screen->width, screen->height);
 
 	KdSetMouseMatrix(&m);
 
@@ -333,9 +330,7 @@ static Bool fbdevMapFramebuffer(KdScreenInfo * screen)
 	screen->memory_size = priv->fix.smem_len;
 
 	if (scrpriv->shadow) {
-		if (!KdShadowFbAlloc(screen,
-				     scrpriv->
-				     randr & (RR_Rotate_90 | RR_Rotate_270)))
+		if (!KdShadowFbAlloc(screen, 0))
 			return FALSE;
 		screen->off_screen_base = screen->memory_size;
 	} else {
@@ -357,17 +352,10 @@ static void fbdevSetScreenSizes(ScreenPtr pScreen)
 	FbdevScrPriv *scrpriv = screen->driver;
 	FbdevPriv *priv = screen->card->driver;
 
-	if (scrpriv->randr & (RR_Rotate_0 | RR_Rotate_180)) {
 		pScreen->width = priv->var.xres;
 		pScreen->height = priv->var.yres;
 		pScreen->mmWidth = screen->width_mm;
 		pScreen->mmHeight = screen->height_mm;
-	} else {
-		pScreen->width = priv->var.yres;
-		pScreen->height = priv->var.xres;
-		pScreen->mmWidth = screen->height_mm;
-		pScreen->mmHeight = screen->width_mm;
-	}
 }
 
 static Bool fbdevUnmapFramebuffer(KdScreenInfo * screen)
@@ -399,168 +387,8 @@ static Bool fbdevSetShadow(ScreenPtr pScreen)
 	if (priv->fix.type != FB_TYPE_PACKED_PIXELS)
 		FatalError("Unsupported frame buffer type %u\n", priv->fix.type);
 
-	if (scrpriv->randr)
-		if (priv->var.bits_per_pixel == 16) {
-			switch (scrpriv->randr) {
-			case RR_Rotate_90:
-				if (useYX)
-					update = shadowUpdateRotate16_90YX;
-				else
-					update = shadowUpdateRotate16_90;
-				break;
-			case RR_Rotate_180:
-				update = shadowUpdateRotate16_180;
-				break;
-			case RR_Rotate_270:
-				if (useYX)
-					update = shadowUpdateRotate16_270YX;
-				else
-					update = shadowUpdateRotate16_270;
-				break;
-			default:
-				update = shadowUpdateRotate16;
-				break;
-			}
-		} else
-			update = shadowUpdateRotatePacked;
-	else
 		update = shadowUpdatePacked;
-	return KdShadowSet(pScreen, scrpriv->randr, update, window);
-}
-
-static Bool fbdevRandRGetInfo(ScreenPtr pScreen, Rotation * rotations)
-{
-	KdScreenPriv(pScreen);
-	KdScreenInfo *screen = pScreenPriv->screen;
-	FbdevScrPriv *scrpriv = screen->driver;
-	RRScreenSizePtr pSize;
-	Rotation randr;
-	int n;
-
-	*rotations = RR_Rotate_All | RR_Reflect_All;
-
-	for (n = 0; n < pScreen->numDepths; n++)
-		if (pScreen->allowedDepths[n].numVids)
-			break;
-	if (n == pScreen->numDepths)
-		return FALSE;
-
-	pSize = RRRegisterSize(pScreen,
-			       screen->width,
-			       screen->height,
-			       screen->width_mm, screen->height_mm);
-
-	randr = KdSubRotation(scrpriv->randr, screen->randr);
-
-	RRSetCurrentConfig(pScreen, randr, 0, pSize);
-
-	return TRUE;
-}
-
-static Bool
-fbdevRandRSetConfig(ScreenPtr pScreen,
-		    Rotation randr, int rate, RRScreenSizePtr pSize)
-{
-	KdScreenPriv(pScreen);
-	KdScreenInfo *screen = pScreenPriv->screen;
-	FbdevScrPriv *scrpriv = screen->driver;
-	Bool wasEnabled = pScreenPriv->enabled;
-	FbdevScrPriv oldscr;
-	int oldwidth;
-	int oldheight;
-	int oldmmwidth;
-	int oldmmheight;
-	int newwidth, newheight, newmmwidth, newmmheight;
-
-	if (screen->randr & (RR_Rotate_0 | RR_Rotate_180)) {
-		newwidth = pSize->width;
-		newheight = pSize->height;
-		newmmwidth = pSize->mmWidth;
-		newmmheight = pSize->mmHeight;
-	} else {
-		newwidth = pSize->height;
-		newheight = pSize->width;
-		newmmwidth = pSize->mmHeight;
-		newmmheight = pSize->mmWidth;
-	}
-
-	if (wasEnabled)
-		KdDisableScreen(pScreen);
-
-	oldscr = *scrpriv;
-
-	oldwidth = screen->width;
-	oldheight = screen->height;
-	oldmmwidth = pScreen->mmWidth;
-	oldmmheight = pScreen->mmHeight;
-
-	/*
-	 * Set new configuration
-	 */
-
-	scrpriv->randr = KdAddRotation(screen->randr, randr);
-
-	pScreen->width = newwidth;
-	pScreen->height = newheight;
-	pScreen->mmWidth = newmmwidth;
-	pScreen->mmHeight = newmmheight;
-
-	fbdevUnmapFramebuffer(screen);
-
-	if (!fbdevMapFramebuffer(screen))
-		goto bail4;
-
-	KdShadowUnset(screen->pScreen);
-
-	if (!fbdevSetShadow(screen->pScreen))
-		goto bail4;
-
-	fbdevSetScreenSizes(screen->pScreen);
-
-	/*
-	 * Set frame buffer mapping
-	 */
-	(*pScreen->ModifyPixmapHeader) (fbGetScreenPixmap(pScreen),
-					pScreen->width,
-					pScreen->height,
-					screen->fb.depth,
-					screen->fb.bitsPerPixel,
-					screen->fb.byteStride,
-					screen->fb.frameBuffer);
-
-	/* set the subpixel order */
-
-	KdSetSubpixelOrder(pScreen, scrpriv->randr);
-	if (wasEnabled)
-		KdEnableScreen(pScreen);
-
-	return TRUE;
-
- bail4:
-	fbdevUnmapFramebuffer(screen);
-	*scrpriv = oldscr;
-	fbdevMapFramebuffer(screen);
-	pScreen->width = oldwidth;
-	pScreen->height = oldheight;
-	pScreen->mmWidth = oldmmwidth;
-	pScreen->mmHeight = oldmmheight;
-
-	if (wasEnabled)
-		KdEnableScreen(pScreen);
-	return FALSE;
-}
-
-static Bool fbdevRandRInit(ScreenPtr pScreen)
-{
-	rrScrPrivPtr pScrPriv;
-
-	if (!RRScreenInit(pScreen))
-		return FALSE;
-
-	pScrPriv = rrGetScrPriv(pScreen);
-	pScrPriv->rrGetInfo = fbdevRandRGetInfo;
-	pScrPriv->rrSetConfig = fbdevRandRSetConfig;
-	return TRUE;
+	return KdShadowSet(pScreen, update, window);
 }
 
 static Bool fbdevCreateColormap(ColormapPtr pmap)
@@ -605,9 +433,6 @@ Bool fbdevInitScreen(ScreenPtr pScreen)
 Bool fbdevFinishInitScreen(ScreenPtr pScreen)
 {
 	if (!shadowSetup(pScreen))
-		return FALSE;
-
-	if (!fbdevRandRInit(pScreen))
 		return FALSE;
 
 	return TRUE;

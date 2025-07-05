@@ -42,7 +42,6 @@
 #include "fb.h"
 #include "fboverlay.h"
 #include "shadow.h"
-#include "randrstr.h"
 #include "globals.h"
 
 #define KD_DPMS_NORMAL	    0
@@ -92,7 +91,6 @@ typedef struct _KdScreenInfo {
 	KdCardInfo *card;
 	ScreenPtr pScreen;
 	void *driver;
-	Rotation randr;		/* rotation and reflection */
 	int width;
 	int height;
 	int rate;
@@ -302,10 +300,6 @@ void KdResume(void);
 
 void KdProcessSwitch(void);
 
-Rotation KdAddRotation(Rotation a, Rotation b);
-
-Rotation KdSubRotation(Rotation a, Rotation b);
-
 void KdUseMsg(void);
 
 int KdProcessArgument(int argc, char **argv, int i);
@@ -317,7 +311,7 @@ KdInitCard(ScreenInfo * pScreenInfo, KdCardInfo * card, int argc, char **argv);
 
 void KdInitOutput(ScreenInfo * pScreenInfo, int argc, char **argv);
 
-void KdSetSubpixelOrder(ScreenPtr pScreen, Rotation randr);
+void KdSetSubpixelOrder(ScreenPtr pScreen);
 
 void kdVersion(const char name[]);
 
@@ -364,7 +358,7 @@ void KdSetLed(int led, Bool on);
 void KdSetMouseMatrix(KdMouseMatrix * matrix);
 
 void
-KdComputeMouseMatrix(KdMouseMatrix * matrix, Rotation randr, int width,
+KdComputeMouseMatrix(KdMouseMatrix * matrix, int width,
 		     int height);
 
 void
@@ -408,7 +402,7 @@ Bool KdShadowFbAlloc(KdScreenInfo * screen, Bool rotate);
 void KdShadowFbFree(KdScreenInfo * screen);
 
 Bool
-KdShadowSet(ScreenPtr pScreen, int randr, ShadowUpdateProc update,
+KdShadowSet(ScreenPtr pScreen, ShadowUpdateProc update,
 	    ShadowWindowProc window);
 
 void KdShadowUnset(ScreenPtr pScreen);

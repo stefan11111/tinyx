@@ -29,7 +29,6 @@
 #include <sys/mman.h>
 #include "kdrive.h"
 
-#include "randrstr.h"
 
 typedef struct _fbdevPriv {
 	struct fb_var_screeninfo var;
@@ -43,7 +42,6 @@ typedef struct _fbdevPriv {
 } FbdevPriv;
 
 typedef struct _fbdevScrPriv {
-	Rotation randr;
 	Bool shadow;
 } FbdevScrPriv;
 

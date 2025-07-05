@@ -9,7 +9,6 @@ SUBDIRS = \
 	mi \
 	miext \
 	os \
-	randr \
 	render  \
 	xfixes \
 	damageext \
@@ -22,7 +21,6 @@ DIST_SUBDIRS = \
 	mi \
 	miext \
 	os \
-	randr \
 	render  \
 	xfixes \
 	damageext \

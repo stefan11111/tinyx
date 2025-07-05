@@ -57,7 +57,7 @@ void KdShadowFbFree(KdScreenInfo * screen)
 }
 
 Bool
-KdShadowSet(ScreenPtr pScreen, int randr, ShadowUpdateProc update,
+KdShadowSet(ScreenPtr pScreen, ShadowUpdateProc update,
 	    ShadowWindowProc window)
 {
 	KdScreenPriv(pScreen);
@@ -66,7 +66,7 @@ KdShadowSet(ScreenPtr pScreen, int randr, ShadowUpdateProc update,
 	shadowRemove(pScreen, pScreen->GetScreenPixmap(pScreen));
 	if (screen->fb.shadow) {
 		return shadowAdd(pScreen, pScreen->GetScreenPixmap(pScreen),
-				 update, window, randr, 0);
+				 update, window, 0, 0);
 	}
 	return TRUE;
 }

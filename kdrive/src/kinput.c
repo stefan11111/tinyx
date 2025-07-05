@@ -364,7 +364,7 @@ void KdSetMouseMatrix(KdMouseMatrix * matrix)
 }
 
 void
-KdComputeMouseMatrix(KdMouseMatrix * m, Rotation randr, int width, int height)
+KdComputeMouseMatrix(KdMouseMatrix * m, int width, int height)
 {
 	int x_dir = 1, y_dir = 1;
 
@@ -374,36 +374,12 @@ KdComputeMouseMatrix(KdMouseMatrix * m, Rotation randr, int width, int height)
 
 	size[0] = width;
 	size[1] = height;
-	if (randr & RR_Reflect_X)
-		x_dir = -1;
-	if (randr & RR_Reflect_Y)
-		y_dir = -1;
-	switch (randr & (RR_Rotate_All)) {
-	case RR_Rotate_0:
+
 		m->matrix[0][0] = x_dir;
 		m->matrix[0][1] = 0;
 		m->matrix[1][0] = 0;
 		m->matrix[1][1] = y_dir;
-		break;
-	case RR_Rotate_90:
-		m->matrix[0][0] = 0;
-		m->matrix[0][1] = -x_dir;
-		m->matrix[1][0] = y_dir;
-		m->matrix[1][1] = 0;
-		break;
-	case RR_Rotate_180:
-		m->matrix[0][0] = -x_dir;
-		m->matrix[0][1] = 0;
-		m->matrix[1][0] = 0;
-		m->matrix[1][1] = -y_dir;
-		break;
-	case RR_Rotate_270:
-		m->matrix[0][0] = 0;
-		m->matrix[0][1] = x_dir;
-		m->matrix[1][0] = -y_dir;
-		m->matrix[1][1] = 0;
-		break;
-	}
+
 	for (i = 0; i < 2; i++) {
 		m->matrix[i][2] = 0;
 		for (j = 0; j < 2; j++)

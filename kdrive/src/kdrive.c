@@ -27,7 +27,6 @@
 #include "kdrive.h"
 #include <mivalidate.h>
 #include <dixstruct.h>
-#include <randrstr.h>
 #include "micmap.h"
 
 #ifdef DPMSExtension
@@ -325,26 +324,6 @@ static const char *KdParseFindNext(const char *cur, const char *delim,
 	return cur;
 }
 
-Rotation KdAddRotation(Rotation a, Rotation b)
-{
-	Rotation rotate = (a & RR_Rotate_All) * (b & RR_Rotate_All);
-	Rotation reflect = (a & RR_Reflect_All) ^ (b & RR_Reflect_All);
-
-	if (rotate > RR_Rotate_270)
-		rotate /= (RR_Rotate_270 * RR_Rotate_90);
-	return reflect | rotate;
-}
-
-Rotation KdSubRotation(Rotation a, Rotation b)
-{
-	Rotation rotate = (a & RR_Rotate_All) * 16 / (b & RR_Rotate_All);
-	Rotation reflect = (a & RR_Reflect_All) ^ (b & RR_Reflect_All);
-
-	if (rotate > RR_Rotate_270)
-		rotate /= (RR_Rotate_270 * RR_Rotate_90);
-	return reflect | rotate;
-}
-
 static void KdParseScreen(KdScreenInfo * screen, const char *arg)
 {
 	char delim;
@@ -355,7 +334,6 @@ static void KdParseScreen(KdScreenInfo * screen, const char *arg)
 	screen->dumb = kdDumbDriver;
 	screen->softCursor = kdSoftCursor;
 	screen->origin = kdOrigin;
-	screen->randr = RR_Rotate_0;
 	screen->width = 0;
 	screen->height = 0;
 	screen->width_mm = 0;
@@ -400,33 +378,6 @@ static void KdParseScreen(KdScreenInfo * screen, const char *arg)
 	kdDumbDriver = FALSE;
 	kdSoftCursor = FALSE;
 	kdSubpixelOrder = SubPixelUnknown;
-
-	if (delim == '@') {
-		arg = KdParseFindNext(arg, "xXY", save, &delim);
-		if (save[0]) {
-			int rotate = atoi(save);
-
-			if (rotate < 45)
-				screen->randr = RR_Rotate_0;
-			else if (rotate < 135)
-				screen->randr = RR_Rotate_90;
-			else if (rotate < 225)
-				screen->randr = RR_Rotate_180;
-			else if (rotate < 315)
-				screen->randr = RR_Rotate_270;
-			else
-				screen->randr = RR_Rotate_0;
-		}
-	}
-	if (delim == 'X') {
-		arg = KdParseFindNext(arg, "xY", save, &delim);
-		screen->randr |= RR_Reflect_X;
-	}
-
-	if (delim == 'Y') {
-		arg = KdParseFindNext(arg, "xY", save, &delim);
-		screen->randr |= RR_Reflect_Y;
-	}
 
 	arg = KdParseFindNext(arg, "x/,", save, &delim);
 	if (save[0]) {
@@ -565,7 +516,7 @@ void KdUseMsg(void)
 {
 	ErrorF("\nTinyX Device Dependent Usage:\n");
 	ErrorF
-	    ("-screen WIDTH[/WIDTHMM]xHEIGHT[/HEIGHTMM][@ROTATION][X][Y][xDEPTH/BPP{,DEPTH/BPP}[xFREQ]]  Specify screen characteristics\n");
+	    ("-screen WIDTH[/WIDTHMM]xHEIGHT[/HEIGHTMM][X][Y][xDEPTH/BPP{,DEPTH/BPP}[xFREQ]]  Specify screen characteristics\n");
 	ErrorF
 	    ("-rgba rgb/bgr/vrgb/vbgr/none   Specify subpixel ordering for LCD panels\n");
 	ErrorF("-zaphod          Disable cursor screen switching\n");
@@ -844,59 +795,12 @@ static Bool KdCreateWindow(WindowPtr pWin)
 	return fbCreateWindow(pWin);
 }
 
-void KdSetSubpixelOrder(ScreenPtr pScreen, Rotation randr)
+void KdSetSubpixelOrder(ScreenPtr pScreen)
 {
 	KdScreenPriv(pScreen);
 	KdScreenInfo *screen = pScreenPriv->screen;
 	int subpixel_order = screen->subpixel_order;
-	Rotation subpixel_dir;
-	int i;
 
-	static struct {
-		int subpixel_order;
-		Rotation direction;
-	} orders[] = {
-		{
-		SubPixelHorizontalRGB, RR_Rotate_0}, {
-		SubPixelHorizontalBGR, RR_Rotate_180}, {
-		SubPixelVerticalRGB, RR_Rotate_270}, {
-	SubPixelVerticalBGR, RR_Rotate_90},};
-
-	static struct {
-		int bit;
-		int normal;
-		int reflect;
-	} reflects[] = {
-		{
-		RR_Reflect_X, SubPixelHorizontalRGB, SubPixelHorizontalBGR},
-		{
-		RR_Reflect_X, SubPixelHorizontalBGR, SubPixelHorizontalRGB},
-		{
-		RR_Reflect_Y, SubPixelVerticalRGB, SubPixelVerticalBGR}, {
-	RR_Reflect_Y, SubPixelVerticalRGB, SubPixelVerticalRGB},};
-
-	/* map subpixel to direction */
-	for (i = 0; i < 4; i++)
-		if (orders[i].subpixel_order == subpixel_order)
-			break;
-	if (i < 4) {
-		subpixel_dir =
-		    KdAddRotation(randr & RR_Rotate_All, orders[i].direction);
-
-		/* map back to subpixel order */
-		for (i = 0; i < 4; i++)
-			if (orders[i].direction & subpixel_dir) {
-				subpixel_order = orders[i].subpixel_order;
-				break;
-			}
-		/* reflect */
-		for (i = 0; i < 4; i++)
-			if ((randr & reflects[i].bit) &&
-			    reflects[i].normal == subpixel_order) {
-				subpixel_order = reflects[i].reflect;
-				break;
-			}
-	}
 	PictureSetSubpixelOrder(pScreen, subpixel_order);
 }
 
@@ -909,29 +813,17 @@ static Bool KdScreenInit(int index, ScreenPtr pScreen, int argc, char **argv)
 	KdCardInfo *card = screen->card;
 	KdPrivScreenPtr pScreenPriv;
 
-	/*
-	 * note that screen->fb is set up for the nominal orientation
-	 * of the screen; that means if randr is rotated, the values
-	 * there should reflect a rotated frame buffer (or shadow).
-	 */
-	Bool rotated = (screen->randr & (RR_Rotate_90 | RR_Rotate_270)) != 0;
+
 	int width, height, *width_mmp, *height_mmp;
 
 	KdAllocatePrivates(pScreen);
 
 	pScreenPriv = KdGetScreenPriv(pScreen);
 
-	if (!rotated) {
 		width = screen->width;
 		height = screen->height;
 		width_mmp = &screen->width_mm;
 		height_mmp = &screen->height_mm;
-	} else {
-		width = screen->height;
-		height = screen->width;
-		width_mmp = &screen->height_mm;
-		height_mmp = &screen->width_mm;
-	}
 	screen->pScreen = pScreen;
 	pScreenPriv->screen = screen;
 	pScreenPriv->card = card;
@@ -1038,7 +930,7 @@ static Bool KdScreenInit(int index, ScreenPtr pScreen, int argc, char **argv)
 		return FALSE;
 	}
 
-	KdSetSubpixelOrder(pScreen, screen->randr);
+	KdSetSubpixelOrder(pScreen);
 
 	/*
 	 * Enable the hardware
