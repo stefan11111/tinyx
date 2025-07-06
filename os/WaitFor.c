@@ -68,9 +68,6 @@ SOFTWARE.
 #include <X11/Xpoll.h>
 #include "dixstruct.h"
 #include "opaque.h"
-#ifdef DPMSExtension
-#include "dpmsproc.h"
-#endif
 
 /* This is just a fallback to errno to hide the differences between unix and
    Windows in the code */
@@ -91,11 +88,6 @@ mffs(fd_mask mask)
     }
     return i;
 }
-
-#ifdef DPMSExtension
-#define DPMS_SERVER
-#include <X11/extensions/dpms.h>
-#endif
 
 struct _OsTimerRec {
     OsTimerPtr		next;
@@ -318,10 +310,6 @@ WaitForSomething(int *pClientsReady)
 	    if (XFD_ANYSET(&tmp_set))
 		QueueWorkProc(EstablishNewConnections, NULL,
 			      (pointer)&LastSelectMask);
-#ifdef DPMSExtension
-	    if (XFD_ANYSET (&devicesReadable) && (DPMSPowerLevel != DPMSModeOn))
-		DPMSSet(DPMSModeOn);
-#endif
 	    if (XFD_ANYSET (&devicesReadable) || XFD_ANYSET (&clientsReadable))
 		break;
 	}
@@ -529,67 +517,11 @@ TimerInit(void)
     }
 }
 
-#ifdef DPMSExtension
-
-#define DPMS_CHECK_MODE(mode,time)\
-    if (time > 0 && DPMSPowerLevel < mode && timeout >= time)\
-	DPMSSet(mode);
-
-#define DPMS_CHECK_TIMEOUT(time)\
-    if (time > 0 && (time - timeout) > 0)\
-	return time - timeout;
-
-static CARD32
-NextDPMSTimeout(INT32 timeout)
-{
-    /*
-     * Return the amount of time remaining until we should set
-     * the next power level. Fallthroughs are intentional.
-     */
-    switch (DPMSPowerLevel)
-    {
-	case DPMSModeOn:
-	    DPMS_CHECK_TIMEOUT(DPMSStandbyTime)
-
-	case DPMSModeStandby:
-	    DPMS_CHECK_TIMEOUT(DPMSSuspendTime)
-
-	case DPMSModeSuspend:
-	    DPMS_CHECK_TIMEOUT(DPMSOffTime)
-
-	default: /* DPMSModeOff */
-	    return 0;
-    }
-}
-#endif /* DPMSExtension */
-
 static CARD32
 ScreenSaverTimeoutExpire(OsTimerPtr timer,CARD32 now,pointer arg)
 {
     INT32 timeout      = now - lastDeviceEventTime.milliseconds;
     CARD32 nextTimeout = 0;
-
-#ifdef DPMSExtension
-    /*
-     * Check each mode lowest to highest, since a lower mode can
-     * have the same timeout as a higher one.
-     */
-    if (DPMSEnabled)
-    {
-	DPMS_CHECK_MODE(DPMSModeOff,     DPMSOffTime)
-	DPMS_CHECK_MODE(DPMSModeSuspend, DPMSSuspendTime)
-	DPMS_CHECK_MODE(DPMSModeStandby, DPMSStandbyTime)
-
-	nextTimeout = NextDPMSTimeout(timeout);
-    }
-
-    /*
-     * Only do the screensaver checks if we're not in a DPMS
-     * power saving mode
-     */
-    if (DPMSPowerLevel != DPMSModeOn)
-	return nextTimeout;
-#endif /* DPMSExtension */
 
     if (!ScreenSaverTime)
 	return nextTimeout;
@@ -630,24 +562,6 @@ SetScreenSaverTimer(void)
 {
     CARD32 timeout = 0;
 
-#ifdef DPMSExtension
-    if (DPMSEnabled)
-    {
-	/*
-	 * A higher DPMS level has a timeout that's either less
-	 * than or equal to that of a lower DPMS level.
-	 */
-	if (DPMSStandbyTime > 0)
-	    timeout = DPMSStandbyTime;
-
-	else if (DPMSSuspendTime > 0)
-	    timeout = DPMSSuspendTime;
-
-	else if (DPMSOffTime > 0)
-	    timeout = DPMSOffTime;
-    }
-#endif
-
     if (ScreenSaverTime > 0)
     {
 	timeout = timeout > 0 ?
@@ -655,11 +569,7 @@ SetScreenSaverTimer(void)
 		ScreenSaverTime;
     }
 
-#ifdef SCREENSAVER
-    if (timeout && !screenSaverSuspended) {
-#else
     if (timeout) {
-#endif
 	ScreenSaverTimer = TimerSet(ScreenSaverTimer, 0, timeout,
 	                            ScreenSaverTimeoutExpire, NULL);
     }

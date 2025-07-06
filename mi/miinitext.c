@@ -64,17 +64,6 @@ extern Bool noRenderExtension;
 #define INITARGS void
 typedef void (*InitExtension)(INITARGS);
 
-#define _XSHM_SERVER_
-#include <X11/extensions/shmstr.h>
-#define _XTEST_SERVER_
-#include <X11/extensions/XTest.h>
-#ifdef XF86BIGFONT
-#include <X11/extensions/xf86bigfproto.h>
-#endif
-#ifdef RES
-#include <X11/extensions/XResproto.h>
-#endif
-
 /* FIXME: this whole block of externs should be from the appropriate headers */
 extern void RenderExtensionInit(INITARGS);
 extern void DamageExtensionInit(INITARGS);
