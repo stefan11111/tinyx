@@ -241,9 +241,9 @@ AC_ARG_WITH(builder-addr,    AS_HELP_STRING([--with-builder-addr=ADDRESS],
 				  [Builder address (default: xorg@lists.freedesktop.org)]),
 				[ BUILDERADDR="$withval" ],
 				[ BUILDERADDR="xorg@lists.freedesktop.org" ])
-AC_ARG_WITH(fontdir,         AS_HELP_STRING([--with-fontdir=FONTDIR], [Path to top level dir where fonts are installed (default: ${libdir}/X11/fonts)]),
+AC_ARG_WITH(fontdir,         AS_HELP_STRING([--with-fontdir=FONTDIR], [Path to top level dir where fonts are installed (default: /usr/share/fonts/X11)]),
                                 [ FONTDIR="$withval" ],
-                                [ FONTDIR="${libdir}/X11/fonts" ])
+                                [ FONTDIR="/usr/share/fonts/X11" ])
 DEFAULT_FONT_PATH="${FONTDIR}/misc/,${FONTDIR}/100dpi/,${FONTDIR}/75dpi/"
 AC_ARG_WITH(default-font-path, AS_HELP_STRING([--with-default-font-path=PATH], [Comma separated list of font dirs]),
 				[ FONTPATH="$withval" ],

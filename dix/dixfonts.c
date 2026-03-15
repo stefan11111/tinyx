@@ -52,6 +52,7 @@ Equipment Corporation.
 #include <dix-config.h>
 #endif
 
+#include "tinyx_compat.h"
 #include <X11/X.h>
 #include <X11/Xmd.h>
 #include <X11/Xproto.h>
@@ -2069,7 +2070,6 @@ InitFonts()
 #ifdef KDRIVESERVER
         BuiltinRegisterFpeFunctions();
 #endif
-        FontFileRegisterFpeFunctions();
     }
 }
 
