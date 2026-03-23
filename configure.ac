@@ -262,7 +262,7 @@ dnl kdrive and its subsystems
 AC_ARG_ENABLE(kdrive,         AS_HELP_STRING([--enable-kdrive], [Build kdrive servers (default: yes)]), [KDRIVE=$enableval], [KDRIVE=yes])
 AC_ARG_ENABLE(xvesa,          AS_HELP_STRING([--disable-xvesa], [Build Xvesa server (default: yes)]), [XVESA=$enableval], [XVESA=yes])
 AC_ARG_ENABLE(xfbdev,         AS_HELP_STRING([--disable-xfbdev], [Build Xfbdev server (default: yes)]), [XFBDEV=$enableval], [XFBDEV=yes])
-
+AC_ARG_ENABLE(xmodesetting,   AS_HELP_STRING([--disable-xmodesetting], [Build Xmodesetting server (default: yes)]), [XMODESETTING=$enableval], [XMODESETTING=yes])
 
 dnl chown/chmod to be setuid root as part of build
 dnl Replaces InstallXserverSetUID in imake
@@ -548,7 +548,16 @@ if test "$KDRIVE" = yes; then
             AC_DEFINE(KDRIVEFBDEV, 1, [Build fbdev-based kdrive server])
         fi
     fi
-    
+
+
+    PKG_CHECK_MODULES(GBM, "gbm", [GBM=yes], [GBM=no])
+    PKG_CHECK_MODULES(LIBDRM, "libdrm", [LIBDRM=yes], [LIBDRM=no])
+    if test "x$GBM" != "xno" -a "x$LIBDRM" != "xno"; then
+        if test "x$XMODESETTING" != "xno"; then
+            AC_DEFINE(KDRIVEMODESETTING, 1, [Build modesetting-based kdrive server])
+        fi
+    fi
+
     # damage shadow extension fb mi
     KDRIVE_INC='-I$(top_srcdir)/kdrive/src'
     KDRIVE_PURE_INCS="$KDRIVE_INC $MIEXT_DAMAGE_INC $MIEXT_SHADOW_INC $XEXT_INC $FB_INC $MI_INC"
@@ -579,6 +588,7 @@ AC_SUBST(KDRIVE_LIBS)
 AM_CONDITIONAL(KDRIVELINUX, [test "x$KDRIVELINUX" = xyes])
 AM_CONDITIONAL(KDRIVEVESA, [test x"$ac_cv_header_asm_vm86_h" = xyes -a "x$XVESA" != "xno"])
 AM_CONDITIONAL(KDRIVEFBDEV, [test x"$ac_cv_header_linux_fb_h" = xyes -a "x$XFBDEV" != "xno"])
+AM_CONDITIONAL(KDRIVEMODESETTING, [test "x$XMODESETTING" != "xno"])
 
 dnl and the rest of these are generic, so they're in config.h
 AC_DEFINE(XResExtension, 1, [Build XRes extension])
@@ -661,6 +671,7 @@ xfixes/Makefile
 kdrive/Makefile
 kdrive/fbdev/Makefile
 kdrive/linux/Makefile
+kdrive/modesetting/Makefile
 kdrive/src/Makefile
 kdrive/vesa/Makefile
 ])
