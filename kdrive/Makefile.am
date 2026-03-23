@@ -6,6 +6,10 @@ if KDRIVEFBDEV
 FBDEV_SUBDIRS = fbdev
 endif
 
+if KDRIVEMODESETTING
+MODESETTING_SUBDIRS = modesetting
+endif
+
 if KDRIVELINUX
 LINUX_SUBDIRS = linux
 endif
@@ -14,6 +18,7 @@ SUBDIRS =			\
 	src			\
 	$(LINUX_SUBDIRS)	\
 	$(FBDEV_SUBDIRS)	\
-	$(VESA_SUBDIRS)
+	$(VESA_SUBDIRS)		\
+	$(MODESETTING_SUBDIRS)
 
 DIST_SUBDIRS = vesa fbdev src linux
